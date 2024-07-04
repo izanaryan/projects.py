@@ -1,0 +1,5 @@
+import random
+name=input("Enter names ").split(", ")
+item=len(name)
+random_choice=random.randint(0,item-1)
+print(name[random_choice]+" is going to pay the bill!")
