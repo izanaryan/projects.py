@@ -1,0 +1,56 @@
+print('''
+   , ,, ,
+   | || |    ,/  _____  \.
+   \_||_/    ||_/     \_||
+     ||       \_| . . |_/
+     ||         |  L  |
+    ,||         |`==='|
+    |>|      ___`>  -<'___
+    |>|\    /             \
+    \>| \  /  ,    .    .  |
+     ||  \/  /| .  |  . |  |
+     ||\  ` / | ___|___ |  |     (
+  (( || `--'  | _______ |  |     ))  (
+(  )\|| (  )\ | - --- - | -| (  ( \  ))
+(\/  || ))/ ( | -- - -- |  | )) )  \((
+ ( ()||((( ())|         |  |( (( () ) \n ''')
+
+
+
+
+print("\n----welcome to treasure Island----")
+path=input("Choose your path left or right?\n").lower()
+if path=="right":
+    print("Congratulations You avoided deadly snakes zzzz")
+    path2=input("choose your next path right or left?\n")
+    if path2=="right":
+        print("Phewww!! That was a close call You nearly escaped the lions.,.,.,")
+        corr_val=input("Enter your next path right or left?\n").lower()
+        if corr_val=="right":
+            val_corr=input("You\'ve reached the final stage!!!! what is the square of 20?\n")
+            if val_corr=="400":
+                print("!!!!congratulations You\'ve found the hidden treasure!!!!! ")
+            else:
+                print("OhOh The mountain has fallen, There is no going back Game over!!!!")
+        else:
+            print("!!!!You were captured by the treasure guards, You will soon be killed!!!!")
+    else:
+        print("You are surrounded by the lions There\'s no way back from here ! Game over....")
+else:
+    print("OhOh, You got surrounded by deadly snakes szszzzsz")
+    chance=input("Do you want to survive ? Y or N\n")
+    if chance =="Y" or chance=="y":
+        chance2=input("Tell the game What is the capital of India?\n").lower()
+          if chance2=="delhi":
+              print("Congratulations You\'ve saved yourself!!!")
+              chance_move=input("Enter your next move right or left?\n").lower()
+              if chance_move=="right":
+                  val_pi=input("You\'ve reached the final dungeon!!! <Enter the value of pi to finish the game.>\>
+                  if val_pi=="3.14":
+                      print("!!!!!! CONGRATULATIONS YOU\'VE FOUND THE HIDDEN TREASURE !!!!!! ")
+                  else :  
+                      print("OhOh OhOh You\'ve locked yourself in the dungeon there is no going back you are dead>        
+              else:
+                  print("Game over!!!!")
+    else:
+        print("GAME OVERR!!!!")
