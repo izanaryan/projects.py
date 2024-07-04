@@ -1,0 +1,141 @@
+import random
+print("_-_-_-_Welcome to Rock,Paper and Scissors game_-_-_-_\n")
+user_input=int(input("Enter 0 for Rock,1 for Paper and 2 for Scissors\n"))
+computer_choice=random.randint(0,2)
+if user_input == 0:
+    print("""
+    _______
+---'   ____)
+      (_____)
+      (_____)
+      (____)
+---.__(___)
+""")
+    if computer_choice == 0:
+        print("""
+    _______
+---'   ____)
+      (_____)
+      (_____)
+      (____)
+---.__(___)
+""")
+        print("Close Call!!!! It\'s a draw")
+    elif computer_choice==1:
+        print("""
+     _______
+---'    ____)____
+           ______)
+          _______)
+         _______)
+---.__________)
+""")
+        print("Oh*Oh, You lost the game!!!! better luck next time<<>>")
+    elif computer_choice == 2:
+        print("""
+    _______
+---'   ____)____
+          ______)
+       __________)
+      (____)
+---.__(___)
+""")
+        print("WwwuuuuHuuuuu!!, You won the gameeeee!!!!")
+elif user_input==1:
+        print("""
+     _______
+---'    ____)____
+           ______)
+          _______)
+         _______)
+---.__________)
+""")
+        if computer_choice==0:
+            print("""
+    _______
+---'   ____)
+      (_____)
+      (_____)
+      (____)
+---.__(___)
+""")
+            print("WwwuuuuHuuuuu!!, You won the gameeeee!!!!")
+            
+        elif comuter_choice ==1:
+            print("""
+     _______
+---'    ____)____
+           ______)
+          _______)
+         _______)
+---.__________)
+""")
+            print("Pheeewwwww! It\'s a draw!!!!")
+        elif computer_choice==2:
+            
+            print("""
+    _______
+---'   ____)____
+          ______)
+       __________)
+      (____)
+---.__(___)
+""")
+            print("OhOh, You lost this game!!!!!")
+elif user_input ==2:
+    print("""
+    _______
+---'   ____)____
+          ______)
+       __________)
+      (____)
+---.__(___)
+""")
+    if computer_choice == 0:
+        print("""
+    _______
+---'   ____)
+      (_____)
+      (_____)
+      (____)
+---.__(___)
+""")
+        print("OhOh, You lost the match!!!")
+    elif computer_choice == 1:
+        print("""
+     _______
+---'    ____)____
+           ______)
+          _______)
+         _______)
+---.__________)
+""")           
+        print("WuuuuHuuuu, You got it, You won the Game!!!!!")
+    elif computer_choice ==2:
+        print("""
+    _______
+---'   ____)____
+          ______)
+       __________)
+      (____)
+---.__(___)
+""")
+        print("Phewwww, That was close, the game is a draw!!!!!")
+                
+else:
+    print(''' ⠀⠀⠀⠀⣠⣴⣶⣿⣿⣿⣿⣿⣷⣶⣤⣑⢦⠀⢀⡴⠚⠉⠓⢢⡴⠒⠉⠑⠢⡀
+⠀⠀⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠑⣾⣄⣴⣿⠇⢀⣅⣠⣾⠖⠀⡰
+⢀⣼⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⠟⠛⠛⠻⣷⢹⣀⡾⠁⣴⠟⠁⢸⠁⣠⠞⠁
+⢸⣿⣿⣿⣿⣿⠟⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠈⣧⢣⡏⠉⣿⠀⠀⢸⠉⣿⠀⠀
+⢸⣿⣿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⢿⠛⠁⠀⠀⠈⠛⠋⠀⠀
+⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⠶⡶⡶⡄⢸⡝⣦⠀⠀⠀⠀⠀⠀⠀
+⡌⣿⣟⠀⠀⠀⣀⣤⣤⣤⣄⡄⠐⢾⣿⡚⢿⣛⠛⠃⠀⠻⡜⡄⠀⠀⠀⠀⠀⠀
+⣹⣜⣿⠀⠀⠞⢋⣡⣿⣚⡷⠿⠀⠀⣝⡍⠉⠁⠀⠀⠀⢻⡏⣷⠀⠀⠀⠀⠀⠀
+⣿⣭⠿⠄⠀⠐⠋⠥⠚⠋⠀⣠⡄⠀⠈⠛⢓⣤⡀⠀⠀⡈⣧⠃⠀⠀⠀⠀⠀⠀
+⡇⢧⠰⠃⣴⠃⠀⠀⠀⢠⠞⠁⠤⠤⣤⣾⣋⡠⣷⠀⠀⡇⡿⠀⠀⠀⠀⠀⠀⠀
+⠙⢌⠳⣄⡼⠀⠀⠀⠀⠀⠀⣠⠴⠞⢉⣩⠵⠶⣿⠀⠀⢰⠃⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠑⢤⣀⣸⠀⠀⠀⠀⢿⡟⠛⠉⠉⣀⣠⠞⠉⠀⠠⣸⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠸⣖⠀⠀⠀⠀⠉⠉⠉⣉⣉⣠⡤⠀⠀⢰⡿⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠈⢣⡀⠀⠀⠀⠀⠀⠉⠉⠉⠀⠀⢠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠓⠲⠦⣤⣀⣀⣀⣀⣀⣴⠎ ''')
+    print("Invalid Input!!!")
