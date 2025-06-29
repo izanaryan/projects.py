@@ -1,0 +1,416 @@
+
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.neighbors import KNeighborsRegressor
+import matplotlib.pyplot as plt
+
+# Load datasets
+dataset_df = pd.read_csv("dataset.csv")  # Main crop dataset
+soil_df = pd.read_csv("soil.csv")  # Soil properties dataset
+
+# Extract common soil features
+soil_features = ["Zn", "Fe", "Cu", "Mn", "B", "S"]
+dataset_common = dataset_df[soil_features]
+soil_common = soil_df[soil_features]
+
+# Standardize datasets
+scaler = StandardScaler()
+dataset_scaled = scaler.fit_transform(dataset_common)
+soil_scaled = scaler.fit_transform(soil_common)
+
+# KNN Mapping - Assign closest soil profile to each crop
+knn = KNeighborsRegressor(n_neighbors=3)
+knn.fit(soil_scaled, soil_df[soil_features])
+predicted_soil = knn.predict(dataset_scaled)
+predicted_soil_df = pd.DataFrame(predicted_soil, columns=soil_features)
+dataset_final = pd.concat([dataset_df, predicted_soil_df], axis=1)
+
+# Encode crop labels
+label_encoder = LabelEncoder()
+dataset_final["label_encoded"] = label_encoder.fit_transform(dataset_final["label"])
+
+# Select features and target
+X = dataset_final.drop(columns=["label", "label_encoded"])
+y = dataset_final["label_encoded"]
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Standardize feature set
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Define Deep Learning Model
+model = keras.Sequential([
+    layers.Input(shape=(X_train_scaled.shape[1],)),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(32, activation='relu'),
+    layers.Dense(16, activation='relu'),
+    layers.Dense(len(label_encoder.classes_), activation='softmax')
+])
+
+# Compile and train model
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+history = model.fit(X_train_scaled, y_train, epochs=50, batch_size=16, validation_data=(X_test_scaled, y_test), verbose=1)
+
+# Plot Accuracy & Loss
+def plot_history(history):
+    plt.figure(figsize=(12,5))
+    plt.subplot(1,2,1)
+    plt.plot(history.history['accuracy'], label='Train Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Val Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.title('Model Accuracy')
+    plt.subplot(1,2,2)
+    plt.plot(history.history['loss'], label='Train Loss')
+    plt.plot(history.history['val_loss'], label='Val Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Model Loss')
+    plt.show()
+
+plot_history(history)
+
+# Save trained model
+model.save("crop_recommendation_model.h5")
+print("Model training complete and saved as crop_recommendation_model.h5")
+
+
+
+
+
+
+//APP.py
+
+
+import streamlit as st
+import pandas as pd
+import pickle
+import json
+
+# sidebar
+st.sidebar.title("Dashboard")
+app_node = st.sidebar.selectbox("Select page",['Home', 'About', 'Crop Recommendation'])
+st.sidebar.info("""
+**Crop Recommendation Tool for accurate and efficient crop yields**
+""")
+
+# home page
+if app_node == 'Home':
+    st.markdown(''' ## Welcome to, \n
+    ## The Crop Recommendation System! 🌾🌱''')
+
+    image_path = 'crop.png'
+    st.image(image_path, use_container_width=True)
+
+    st.markdown('''
+                **Our goal is to help farmers and agricultural experts make informed decisions about crop selection for their immediate agriculural environment accurately.**
+
+                ### How our model works:
+                1. **Upload relevant data:** Go to the **Crop Recommendation** page and input the relevant data into their specified fields.
+                2. **Analysis of uploaded data:** Our model will analyze the data and classify it into one of the pre-defined crops.
+                3. **Get your recommendation:** Click the **Recommend** button to get the crop recommendation for your specific environment.
+    
+                ### Why choose us:
+                1. **Accuracy:** Our project leverages highly accurate and efficient Machine learning algorithms to provide the most accurate crop recommendations.
+                2. **User-friendly:** Simple and intuitive interface for a smooth user experience.
+                3. **Fast and efficient:** Get results quickly, enabling quick informed decisions regarding crop selection.
+                
+                ### Get Started:
+                Select the **Crop Recommendation** page in the sidebar to get your crop recommendation!
+                
+                ### About Us:
+                Learn more about our Project, dataset and our Team on the **About** page.
+    ''')
+
+# about page
+elif app_node == 'About':
+    st.markdown('''
+                ## About Our Project: Crop Recommendation System
+                ### Our Objective
+                Farmers and agricultural experts face numerous challenges when selecting the right crop for their immediate environment. Through this project we hope to provide a solution to this problem.
+
+                ### About Our Dataset
+                1. **Dataset size:** 100 samples of 22 different crops for a total of 2200 data points. 7 numerical attributes and 1 attribute for the target variable, i.e., the crops.
+                2. **Environmental Data:** The dataset contains information about the immediate environment required for the crops to grow in. These includes the Nitrogen(N), Phosphorus(P), Potassium(K) content in the soil, the temperature in °C, the humidity(%) in the air, the pH level of the soil and the rainfall in cm received in the region.
+                3. **List of Crops:** Apple, Banana, Blackgram, Chickpea, Coconut, Coffee, Cotton, Grapes, Jute, Kidneybeans, Lentil, Maize, Mango, Mothbeans, Mungbean, Muskmelon, Orange, Papaya, Pigeonpeas, Pomegranate, Rice, Watermelon.
+                4. **Data Quality:** A complete dataset with minimal missing values and a reasonable numerical range for an agricultural dataset.
+
+                ### Our Team
+                Our team consists of 6 members, all of whom are passionate about Machine Learning and Agriculture which led us to endeavor this project. We are students pursuing our Bachelors degree in Computer Science & Engineering at Kalinga Institute of Industrial Technology(KIIT). Our team members are:
+                1. Aryan Sharma (22051063)
+                2. Ishan Krishnan (22051079)
+                3. Anandita Sharma (22052005)
+                4. Ananta Jaitley (22052090)
+                5. Aditya Biswas (22052871)
+                6. Anwesha Nema (22053228)
+    ''')
+
+# crop recommendation page
+elif app_node == 'Crop Recommendation':
+    with open('rfc_model.pickle', 'rb') as f:
+        model = pickle.load(f)
+    
+    with open('features_data.json', 'r') as f:
+        features_data = json.load(f)
+
+    st.header("🌾 Crop Recommender")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Soil Nutrients")
+        N = st.number_input('Nitrogen(N) %', min_value=0.0, max_value=150.0, format="%.2f")
+        P = st.number_input('Phosphorous(P) %', min_value=5.0, max_value=155.0, format="%.2f")
+        K = st.number_input('Potassium(K) %', min_value=5.0, max_value=215.0, format="%.2f")
+        ph = st.number_input('pH', min_value=0.0, max_value=14.0, value=6.5, format="%.2f")
+
+    with col2:
+        st.subheader("Weather Conditions")
+        temperature = st.number_input('Temperature (°C)', min_value=5.0, max_value=50.0, step=0.01, format="%.2f")
+        humidity = st.number_input('Humidity (%)', min_value=10.0, max_value=100.0, step=0.01, format="%.2f")
+        rainfall = st.number_input('Rainfall (mm)', min_value=20.0, max_value=300.0, step=0.01, format="%.2f")
+
+    def predict_crop():
+        class_labels = {
+            0:'Apple', 1:'Banana', 2:'Blackgram', 3:'Chickpea', 4:'Coconut', 5:'Coffee', 
+            6:'Cotton', 7:'Grapes', 8:'Jute', 9:'Kidneybeans', 10:'Lentil', 11:'Maize',
+            12:'Mango', 13:'Mothbeans', 14:'Mungbean', 15:'Muskmelon', 16:'Orange', 
+            17:'Papaya', 18:'Pigeonpeas', 19:'Pomegranate', 20:'Rice', 21:'Watermelon'
+        }
+
+        inputs = [N, P, K, ph, temperature, humidity, rainfall]
+        input_data = pd.Series(inputs,index=['N', 'P', 'K', 'pH', 'Temperature', 'Humidity', 'Rainfall'])
+        prediction = model.predict([input_data])[0]
+
+        st.success(f"Recommended crop: **{class_labels[prediction]}**")
+                
+        # Feature importance
+        st.markdown('Key Factors Influencing This Recommendation:')
+        importances = model.feature_importances_
+        feature_importance = pd.DataFrame({
+                            'Factor': features_data['columns'],
+                            'Importance': importances
+                            }).sort_values('Importance', ascending=False)
+                
+        st.bar_chart(feature_importance.set_index('Factor'))
+        
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if(st.button('Recommend', use_container_width=True)):
+            predict_crop()     
+
+
+
+
+
+
+
+##Data Visualization
+
+
+def plot_feature_distributions(data):
+    """Plot distributions of all features"""
+    features = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+    colors = ['red', 'orange', 'brown', 'green', 'blue', 'indigo', 'grey']
+    
+    plt.figure(figsize=(20, 20))
+    for i, (feature, color) in enumerate(zip(features, colors), 1):
+        plt.subplot(4, 2, i)
+        sns.histplot(data[feature], color=color, kde=True)
+    plt.tight_layout()
+    plt.show()
+
+plot_feature_distributions(data)
+
+
+
+
+
+##Crop Summary Analysis
+
+
+def plot_crop_summary(crop_summary):
+    """Plot mean values of features for each crop"""
+    features = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+    colors = ['red', 'orange', 'brown', 'green', 'blue', 'indigo', 'grey']
+    
+    plt.figure(figsize=(22, 42))
+    plt.title("Crop Summary Analysis")
+    for i, (feature, color) in enumerate(zip(features, colors), 1):
+        plt.subplot(7, 1, i)
+        sns.barplot(y=feature, x='label', color=color, data=crop_summary.reset_index())
+    plt.tight_layout()
+    plt.show()
+
+crop_summary = pd.pivot_table(data, index=['label'], aggfunc='mean')
+plot_crop_summary(crop_summary)
+
+
+
+
+## NPK Comparison
+
+
+def plot_npk_comparison(crop_summary):
+    """Compare N, P, K values between crops"""
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=crop_summary.index,
+        y=crop_summary['N'],
+        name='Nitrogen',
+        marker_color='red'
+    ))
+    fig.add_trace(go.Bar(
+        x=crop_summary.index,
+        y=crop_summary['P'],
+        name='Phosphorous',
+        marker_color='blue'
+    ))
+    fig.add_trace(go.Bar(
+        x=crop_summary.index,
+        y=crop_summary['K'],
+        name='Potassium',
+        marker_color='green'
+    ))
+    fig.update_layout(
+        title="Comparison of N, P, K values between crops",
+        barmode='group',
+        xaxis_tickangle=-45
+    )
+    fig.show()
+
+plot_npk_comparison(crop_summary)
+
+
+
+
+# Correlation Analysis
+
+def plot_correlation_matrix(data):
+    """Plot correlation matrix heatmap"""
+    corr = data.drop(['label'], axis=1).corr()
+    plt.figure(figsize=(10, 9))
+    sns.heatmap(corr, annot=True, cmap='coolwarm')
+    plt.xlabel('Features')
+    plt.ylabel('Features')
+    plt.title('Correlation between different features', fontsize=15, c='black')
+    plt.show()
+
+plot_correlation_matrix(data)
+
+
+
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+import time
+
+
+# Standardize features (important for SVM, KNN, etc.)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Initialize models
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=1000),
+    "Gaussian Naive Bayes": GaussianNB(),
+    "SVM": SVC(),
+    "K-Nearest Neighbors": KNeighborsClassifier(),
+    "Decision Tree": DecisionTreeClassifier(),
+    "Random Forest": RandomForestClassifier(),
+}
+
+# Dictionary to store results
+results = {
+    'Model': [],
+    'Accuracy': [],
+    'Precision': [],
+    'Recall': [],
+    'F1 Score': [],
+    'Training Time (s)': []
+}
+
+# Train and evaluate each model
+for name, model in models.items():
+    start_time = time.time()
+    
+    # Train the model
+    if name in ["SVM", "K-Nearest Neighbors", "Logistic Regression"]:
+        model.fit(X_train_scaled, y_train)
+        y_pred = model.predict(X_test_scaled)
+    else:
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+    
+    # Calculate metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average='weighted')
+    recall = recall_score(y_test, y_pred, average='weighted')
+    f1 = f1_score(y_test, y_pred, average='weighted')
+    training_time = time.time() - start_time
+    
+    # Store results
+    results['Model'].append(name)
+    results['Accuracy'].append(accuracy)
+    results['Precision'].append(precision)
+    results['Recall'].append(recall)
+    results['F1 Score'].append(f1)
+    results['Training Time (s)'].append(training_time)
+
+# Convert results to DataFrame
+results_data = pd.DataFrame(results)
+
+# Get feature importance
+importances = model.feature_importances_
+features = X.columns
+indices = np.argsort(importances)[::-1]
+
+# Plot feature importance
+plt.figure(figsize=(7,5))
+plt.title("Feature Importance")
+plt.bar(range(X.shape[1]), importances[indices], align="center")
+plt.xticks(range(X.shape[1]), [features[i] for i in indices])
+plt.xlim([-1, X.shape[1]])
+plt.tight_layout()
+plt.show()
+
+
+
+# Calculate optimal rainfall ranges
+
+rainfall_ranges = data.groupby('label')['rainfall'].agg(['min', 'median', 'max'])
+rainfall_ranges['optimal_range'] = rainfall_ranges['max'] - rainfall_ranges['min']
+
+
+
+# Visualize
+
+plt.figure(figsize=(7,7))
+sns.scatterplot(data=rainfall_ranges, x='median', y='optimal_range', hue=rainfall_ranges.index)
+plt.title("Optimal Rainfall Ranges by Crop")
+plt.xlabel("Median Rainfall (mm)")
+plt.ylabel("Rainfall Range Tolerance")
+plt.legend(bbox_to_anchor=(1.05, 1))
+plt.show()
+
+
+
+
+// Graphs commands are not added code done in colab notebook
