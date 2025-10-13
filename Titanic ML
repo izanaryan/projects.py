@@ -2,57 +2,270 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt                                                    ## Libraries to be used
 
+
+train_data = pd.read_csv('train.csv')
+test = pd.read_csv('test.csv')
+
+
 import os
 print(os.getcwd())
 
 
-titanic_data                                                                      ## Displayas data in the the file 
-
-numeric_data = titanic_data.select_dtypes(include=['number'])                     ## converting datattype into float 
-
-
-corr_matrix = numeric_data.corr()
-
-
-sns.heatmap(numeric_data.corr(), cmap="YlGnBu", annot=True, fmt=".2f")
-plt.show()
-
-
-from sklearn.model_selection import StratifiedShuffleSplit
-
-split = StratifiedShuffleSplit (n_splits=1, test_size=0.2)
-for train_indices, test_indices in split.split(titanic_data, titanic_data[["Survived", "Pclass", "Sex"]]):  
-    strat_train_set = titanic_data.loc[train_indices]
-    strat_test_set = titanic_data.loc[test_indices]
+df_num = train_data[["Age", "SibSp", "Parch", "Fare"]]
+df_cat = train_data[["Survived", "Ticket","Cabin", "Sex", "Embarked"]]
 
 
 
-plt.subplot(1,2,1)
-strat_train_set['Survived'].hist()
-strat_train_set['Pclass'].hist()
+for i in df_num.columns:
+   plt.hist(df_num[i])
+   plt.title(i)
+   plt.show()
 
-plt.subplot(1,2,2)
-strat_train_set['Survived'].hist()
-strat_train_set['Pclass'].hist()
 
-plt.show()                                                                             ## Graph Plotting
+
+sns.barplot(data=train_data, x="Pclass", y= "Fare", hue = "Survived")
+
+
+
+pd.pivot_table(train_data, index="Survived", values=["Age", "SibSp", "Parch", "Fare" ], aggfunc=np.mean)
 
 
 
 
 
-strat_train_set.info()
+for i in df_cat.columns:
+   sns.barplot(x=df_cat[i].value_counts().index, y=df_cat[i].value_counts())
+   plt.show()
+
+
+
+x = pd.DataFrame(
+    (
+      pd.pivot_table(
+          train_data,
+          index="Survived",
+          columns="Sex",
+          values="Ticket",
+          aggfunc="count"
+      )
+   )
+)
+print()
+print(
+    pd.pivot_table(
+        train_data,index="Survived",columns="Pclass",values="Ticket",aggfunc="count"
+    )
+)
+print()
+print(
+    pd.pivot_table(
+        train_data, index="Survived", columns="Embarked", values="Ticket", aggfunc="count"
+    )
+)
+print()
+x
+
+
+train_data.isnull().sum()
+
+
+train_data["Age"] = train_data["Age"].fillna(train_data["Age"].mean())
+train_data["Embarked"] = train_data["Embarked"].fillna(train_data["Embarked"].mode()[0])
+
+
+
+train_data.isnull().sum()
+
+
+
+train_data["Fare"] = np.log(train_data["Fare"] + 1)
+
+
+
+sns.displot(train_data["Fare"], kde=True)
+
+
+
+corr = train_data.corr(numeric_only = True)
+sns.heatmap(corr, annot=True, fmt=".2f" ,cmap = "coolwarm")
 
 
 
 
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.impute import SimpleImputer
 
-class AgeImputer(BaseEstimator, TransformerMixin):
-  def fit(self, X, y=None):
-    return self
-  def transform(self, X):
-    imputer = SimpleImputer(strategy='mean')
-    X['Age'] = imputer.fit_transform(X[['Age']])
-    return X
+from sklearn.preprocessing import LabelEncoder
+
+cols = ["Sex", "Embarked"]
+le = LabelEncoder()
+
+for col in cols:
+    train_data[col] = le.fit_transform(train_data[col])
+
+train_data.head()
+
+
+
+
+
+
+X = train_data.drop(columns=["Survived"])
+y = train_data["Survived"]
+train_data
+
+
+
+
+
+from sklearn.model_selection import train_test_split, cross_val_score
+
+def classify(model):
+  x_train, x_test, y_train, y_test = train_test_split(
+      X,y, test_size=0.25, random_state=40
+  )
+  model.fit(x_train, y_train)
+  print("Accuracy: ", model.score(x_test, y_test))
+
+  score = cross_val_score(model, X, y, cv=5)
+  print("CV score :", np.mean(score))
+
+
+
+
+from sklearn.tree import DecisionTreeClassifier
+
+model = DecisionTreeClassifier()
+classify(model)
+
+
+
+
+
+from lightgbm import LGBMClassifier
+
+model = LGBMClassifier()
+classify(model)
+
+
+
+
+from xgboost import XGBClassifier
+
+model = XGBClassifier()
+classify(model)
+
+
+
+
+
+
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier()
+classify(model)
+
+
+
+
+
+
+from sklearn.ensemble import ExtraTreesClassifier
+
+model = ExtraTreesClassifier()
+classify(model)
+
+
+
+
+
+from sklearn.linear_model import LogisticRegression
+
+model = LogisticRegression(max_iter=1000)
+classify(model)
+
+
+
+
+model = XGBClassifier()
+model.fit(X, y)
+
+
+
+
+X_test = test.drop(columns=["PassengerId", "Cabin", "Name", "Ticket"], axis=1)
+X_test
+
+
+
+
+
+from sklearn.preprocessing import LabelEncoder
+
+cols = ["Sex", "Embarked"]
+le = LabelEncoder()
+
+for col in cols:
+    X_test[col] = le.fit_transform(X_test[col])
+
+X_test.head()
+
+
+
+
+
+X_test["Age"] = X_test["Age"].fillna(X_test["Age"].mean())
+X_test["Fare"] = X_test["Fare"].fillna(X_test["Fare"].mean())
+
+X_test.isnull().sum()
+
+
+
+
+
+
+X_test = test.drop(columns=["PassengerId", "Cabin", "Name", "Ticket"], axis=1)
+X_test["Age"] = X_test["Age"].fillna(X_test["Age"].mean())
+X_test["Fare"] = X_test["Fare"].fillna(X_test["Fare"].mean())
+X_test.isnull().sum()
+
+from sklearn.preprocessing import LabelEncoder
+
+cols = ["Sex", "Embarked"]
+le = LabelEncoder()
+
+for col in cols:
+    X_test[col] = le.fit_transform(X_test[col])
+
+X_test.head()
+
+X_test
+
+
+
+
+
+
+
+pred = model.predict(X_test)
+
+pred
+
+
+
+
+submit = pd.read_csv('gender_submission.csv')
+submit
+
+
+
+submit["Survived"] = pred
+
+submit
+
+
+
+submit.info()
+
+
+submit.to_csv("submission.csv", index=False)
+
+
