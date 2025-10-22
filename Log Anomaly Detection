@@ -1,0 +1,228 @@
+
+
+# scripts/generate_logs.py
+
+
+
+
+import pandas as pd
+import random
+from datetime import datetime, timedelta
+
+def generate_auth_logs(num_entries=500, output_path="data/auth_logs.csv"):
+    """
+    Generate synthetic authentication logs.
+    Each entry includes: timestamp, username, source_ip, and status.
+    """
+
+    usernames = ["admin", "guest", "user1", "user2", "test", "backup"]
+    statuses = ["SUCCESS", "FAILED"]
+
+    logs = []
+    start_time = datetime.now() - timedelta(days=5)
+
+    for _ in range(num_entries):
+        timestamp = start_time + timedelta(minutes=random.randint(0, 7200))
+        username = random.choice(usernames)
+        status = random.choices(statuses, weights=[0.8, 0.2])[0]  # 80% success, 20% failed
+
+        # Generate random IPs
+        source_ip = f"192.168.{random.randint(0, 255)}.{random.randint(1, 255)}"
+
+        logs.append({
+            "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "username": username,
+            "source_ip": source_ip,
+            "status": status
+        })
+
+    # Create data directory if missing
+    import os
+    os.makedirs("data", exist_ok=True)
+
+    # Save the logs
+    df = pd.DataFrame(logs)
+    df.to_csv(output_path, index=False)
+    print(f"Generated {num_entries} authentication log entries at: {output_path}")
+
+
+# Run directly
+if __name__ == "__main__":
+    generate_auth_logs()
+
+
+
+
+
+
+
+# scripts/preprocess_logs.py
+
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+import joblib
+from scripts.preprocess_logs import load_logs
+
+def train_model():
+    # 1️⃣ Load preprocessed data
+    df = load_logs()
+
+    # 2️⃣ Select features for anomaly detection
+    features = ["hour", "day", "weekday", "status_code"]
+    X = df[features]
+
+    # 3️⃣ Initialize Isolation Forest
+    model = IsolationForest(
+        n_estimators=100,
+        contamination=0.05,  # 5% of data treated as anomaly
+        random_state=42
+    )
+
+    # 4️⃣ Train model
+    model.fit(X)
+
+    # 5️⃣ Predict anomalies
+    df["anomaly"] = model.predict(X)
+    # Model returns 1 = normal, -1 = anomaly
+    df["anomaly"] = df["anomaly"].map({1: "Normal", -1: "Anomaly"})
+
+    # 6️⃣ Save model for reuse
+    joblib.dump(model, "models/isolation_forest_model.pkl")
+
+    print("Model trained and saved successfully!")
+    print("\nSample anomaly predictions:")
+    print(df.head(10))
+
+    return df
+
+
+# Run test
+if __name__ == "__main__":
+    train_model()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# scripts/model_train.py
+
+
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+import joblib
+import os
+from preprocess_logs import load_logs
+
+def train_anomaly_model():
+    # Step 1: Load and preprocess logs
+    df = load_logs()
+
+    # Step 2: Select numeric features for model training
+    features = ["hour", "day", "weekday", "status_code"]
+    X = df[features]
+
+    # Step 3: Train the Isolation Forest model
+    model = IsolationForest(
+        contamination=0.05,  # roughly 5% anomalies expected
+        n_estimators=100,
+        random_state=42
+    )
+    model.fit(X)
+
+    # Step 4: Predict anomalies (-1 = anomaly, 1 = normal)
+    df["anomaly"] = model.predict(X)
+    df["anomaly"] = df["anomaly"].map({1: 0, -1: 1})  # 1 for anomaly, 0 for normal
+
+    # Step 5: Save model
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(model, "models/isolation_forest_model.pkl")
+
+    print("Model trained and saved successfully!")
+    print("\nSample anomaly predictions:")
+    print(df.head(10))
+
+    # Step 6: Save results to output folder
+    os.makedirs("output", exist_ok=True)
+    df.to_csv("output/anomaly_results.csv", index=False)
+    print("\n Results saved to 'output/anomaly_results.csv'")
+
+if __name__ == "__main__":
+    train_anomaly_model()
+
+
+
+
+
+
+
+
+
+
+# scripts/visualize_results.py
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def visualize_anomalies(filepath="output/anomaly_results.csv"):
+    """
+    Visualize login anomalies using distinct markers and colors.
+    Blue dots = Normal logins
+    Red X = Anomalies
+    """
+    df = pd.read_csv(filepath)
+
+    plt.figure(figsize=(10, 6))
+    plt.style.use("seaborn-v0_8-darkgrid")
+
+    # Plot normal points
+    normal = df[df["anomaly"] == 0]
+    plt.scatter(
+        normal["hour"],
+        normal["status_code"],
+        color="royalblue",
+        label="Normal Logins (●)",
+        alpha=0.7,
+        s=60,
+        marker="o"
+    )
+
+    # Plot anomalies
+    anomalies = df[df["anomaly"] == 1]
+    plt.scatter(
+        anomalies["hour"],
+        anomalies["status_code"],
+        color="red",
+        label="Anomalies (✖)",
+        alpha=0.9,
+        s=100,
+        marker="x"
+    )
+
+    plt.title("Login Activity by Hour — Anomaly Detection", fontsize=14, weight="bold")
+    plt.xlabel("Hour of Day", fontsize=12)
+    plt.ylabel("Login Status (0 = Success, 1 = Failed)", fontsize=12)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    print("Clear anomaly visualization displayed successfully!")
+
+if __name__ == "__main__":
+    visualize_anomalies()
+
+
+
+
+
+
+
